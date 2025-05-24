@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d" d:DesignWidth="300" d:DesignHeight="450"
         Title="Audio Player"
-        Width="600" Height="550"
+        Width="650" Height="600"
         x:Class="AudioPlayer.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         TransparencyLevelHint="AcrylicBlur"
@@ -15,11 +15,13 @@
     
     <!-- Side panel for playlist or mby controls -->
     <DockPanel>
-    <Border DockPanel.Dock="Left" Width="220" Background="#1f1e1e" >
-        
-        
-        
-        
+        <Border DockPanel.Dock="Left" Width="220" Background="#1f1e1e" >
+            <Grid>
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center"> 
+            <TextBlock Text="No music here" FontSize="16" HorizontalAlignment="Center" Margin="0,0,0,0"></TextBlock>
+                <Button Content="Open Folder" Command="{Binding Path=OpenFileCommand}" HorizontalAlignment="Center" Margin="5"></Button>
+            </StackPanel>
+        </Grid>
     </Border>    
         
     <Grid RowDefinitions="40,Auto,Auto,Auto,Auto,*" Margin="10">
@@ -59,7 +61,6 @@
             <Button Content="Prev" Margin="5" />
             <Button Content="Play/Pause" Command="{Binding PlayPauseCommand}" Margin="5" />
             <Button Content="Next" Margin="5" />
-            <Button Content="Open" Command="{Binding Path=OpenFileCommand}" Margin="5"></Button>
         </StackPanel>
        </Grid>
   </DockPanel>     

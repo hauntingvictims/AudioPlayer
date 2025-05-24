@@ -18,7 +18,7 @@ namespace AudioPlayer.ViewModels
         private string _currentFile = "No file selected";
         private string _currentTimeFormatted = "00:00";
         private string _durationFormatted = "00:00";
-        private double _volume = 0.5;
+        private double _volume = 0.3;
         private double _progress = 0.0;
         private double _duration = 1.0;
         private string _timeCollapse;
