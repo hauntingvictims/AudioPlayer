@@ -21,6 +21,7 @@ namespace AudioPlayer.ViewModels
         private double _volume = 0.5;
         private double _progress = 0.0;
         private double _duration = 1.0;
+        private string _timeCollapse;
         private Bitmap _coverImage;
         private readonly string _defaultCoverPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Assets", "default_cover.png");
         private readonly string _fallbackCoverPath = Path.Combine(Path.GetDirectoryName(AppDomain.CurrentDomain.BaseDirectory)!, "..", "..", "..", "Assets", "default_cover.png");
