@@ -10,6 +10,7 @@ using ReactiveUI;
 using TagLib;
 using System.Collections.ObjectModel;
 using AudioPlayer.Models;
+using AudioPlayer.ViewModels;
 
 namespace AudioPlayer.ViewModels
 {
@@ -25,7 +26,7 @@ namespace AudioPlayer.ViewModels
         private Bitmap _coverImage;
         private readonly string _defaultCoverPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Assets", "default_cover.png");
         private readonly string _fallbackCoverPath = Path.Combine(Path.GetDirectoryName(AppDomain.CurrentDomain.BaseDirectory)!, "..", "..", "..", "Assets", "default_cover.png");
-        private ObservableCollection<string> _musicFiles;
+        private ObservableCollection<TrackViewModel> _musicFiles;
         private string _musicFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Music");
         private FileSystemWatcher _fileSystemWatcher;
 
@@ -54,7 +55,6 @@ namespace AudioPlayer.ViewModels
             {
                 this.RaiseAndSetIfChanged(ref _volume, value);
                 _player.SetVolume((float)value);
-                Console.WriteLine($"Volume set to: {value}");
             }
         }
 
@@ -82,11 +82,11 @@ namespace AudioPlayer.ViewModels
 
         public bool HasCoverImage => true;
 
-            public ObservableCollection<string> MusicFiles
-            {
-                get => _musicFiles;
-                set => this.RaiseAndSetIfChanged(ref _musicFiles, value);
-            }
+        public ObservableCollection<TrackViewModel> MusicFiles
+        {
+            get => _musicFiles;
+            set => this.RaiseAndSetIfChanged(ref _musicFiles, value);
+        }
 
         public ReactiveCommand<Unit, Unit> OpenFileCommand { get; }
         public ReactiveCommand<Unit, Unit> PlayPauseCommand { get; }
@@ -99,7 +99,7 @@ namespace AudioPlayer.ViewModels
         public MainWindowViewModel()
         {
             _player = new AudioPlayerModel();
-            MusicFiles = new ObservableCollection<string>();
+            MusicFiles = new ObservableCollection<TrackViewModel>();
             OpenFileCommand = ReactiveCommand.CreateFromTask(OpenFile);
             PlayPauseCommand = ReactiveCommand.Create(_player.PlayPause);
             StopCommand = ReactiveCommand.Create(_player.Stop);
@@ -163,9 +163,9 @@ namespace AudioPlayer.ViewModels
             {
                 var files = Directory.GetFiles(_musicFolder, "*.mp3", SearchOption.TopDirectoryOnly);
                 MusicFiles.Clear();
-                foreach (var file in files)
+                for (int i = 0; i < files.Length; i++)
                 {
-                    MusicFiles.Add(file);
+                    MusicFiles.Add(new TrackViewModel(i + 1, files[i]));
                 }
                 Console.WriteLine($"Loaded {MusicFiles.Count} music files from {_musicFolder}");
             }
@@ -179,7 +179,6 @@ namespace AudioPlayer.ViewModels
         {
             try
             {
-                Console.WriteLine($"Attempting to load default cover image from: {_defaultCoverPath}");
                 if (System.IO.File.Exists(_defaultCoverPath))
                 {
                     var bitmap = new Bitmap(_defaultCoverPath);
@@ -239,7 +238,6 @@ namespace AudioPlayer.ViewModels
                     _musicFolder = result;
                     _fileSystemWatcher.Path = _musicFolder;
                     LoadMusicFiles();
-                    Console.WriteLine($"Selected music folder: {_musicFolder}");
                 }
             }
         }

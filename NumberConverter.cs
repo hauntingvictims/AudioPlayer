@@ -9,12 +9,11 @@ namespace AudioPlayer
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            if (value != null && parameter is IList collection)
+            if (value is int number)
             {
-                int index = collection.IndexOf(value);
-                return $"{index + 1:D2}. "; 
+                return $"{number:D2}.";
             }
-            return "01.";
+            return "00.";
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
