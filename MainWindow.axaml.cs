@@ -1,5 +1,6 @@
 using Avalonia.Controls;
-using Avalonia.Markup.Xaml;
+using Avalonia.Interactivity;
+using System;
 
 namespace AudioPlayer
 {
@@ -10,9 +11,13 @@ namespace AudioPlayer
             InitializeComponent();
         }
 
-        private void InitializeComponent()
+        private void OnTrackDoubleTapped(object? sender, RoutedEventArgs e)
         {
-            AvaloniaXamlLoader.Load(this);
+            if (sender is TextBlock textBlock && textBlock.DataContext is string trackPath)
+            {
+                var viewModel = DataContext as ViewModels.MainWindowViewModel;
+                viewModel?.PlayTrackCommand.Execute(trackPath).Subscribe();
+            }
         }
     }
 }

@@ -7,8 +7,9 @@ using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Media.Imaging;
 using ReactiveUI;
-using AudioPlayer.Models;
 using TagLib;
+using System.Collections.ObjectModel;
+using AudioPlayer.Models;
 
 namespace AudioPlayer.ViewModels
 {
@@ -18,13 +19,15 @@ namespace AudioPlayer.ViewModels
         private string _currentFile = "No file selected";
         private string _currentTimeFormatted = "00:00";
         private string _durationFormatted = "00:00";
-        private double _volume = 0.3;
+        private double _volume = 1.0;
         private double _progress = 0.0;
         private double _duration = 1.0;
-        private string _timeCollapse;
         private Bitmap _coverImage;
         private readonly string _defaultCoverPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Assets", "default_cover.png");
         private readonly string _fallbackCoverPath = Path.Combine(Path.GetDirectoryName(AppDomain.CurrentDomain.BaseDirectory)!, "..", "..", "..", "Assets", "default_cover.png");
+        private ObservableCollection<string> _musicFiles;
+        private string _musicFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Music");
+        private FileSystemWatcher _fileSystemWatcher;
 
         public string CurrentFile
         {
@@ -77,39 +80,99 @@ namespace AudioPlayer.ViewModels
             }
         }
 
-        public bool HasCoverImage => true; 
+        public bool HasCoverImage => true;
+
+            public ObservableCollection<string> MusicFiles
+            {
+                get => _musicFiles;
+                set => this.RaiseAndSetIfChanged(ref _musicFiles, value);
+            }
 
         public ReactiveCommand<Unit, Unit> OpenFileCommand { get; }
         public ReactiveCommand<Unit, Unit> PlayPauseCommand { get; }
         public ReactiveCommand<Unit, Unit> StopCommand { get; }
         public ReactiveCommand<Unit, Unit> MinimizeCommand { get; }
         public ReactiveCommand<Unit, Unit> CloseCommand { get; }
+        public ReactiveCommand<Unit, Unit> OpenFolderCommand { get; }
+        public ReactiveCommand<string, Unit> PlayTrackCommand { get; }
 
         public MainWindowViewModel()
         {
             _player = new AudioPlayerModel();
+            MusicFiles = new ObservableCollection<string>();
             OpenFileCommand = ReactiveCommand.CreateFromTask(OpenFile);
             PlayPauseCommand = ReactiveCommand.Create(_player.PlayPause);
             StopCommand = ReactiveCommand.Create(_player.Stop);
             MinimizeCommand = ReactiveCommand.Create(MinimizeWindow);
             CloseCommand = ReactiveCommand.Create(CloseWindow);
+            OpenFolderCommand = ReactiveCommand.CreateFromTask(OpenFolder);
+            PlayTrackCommand = ReactiveCommand.CreateFromTask<string>(PlayTrack);
 
-    
             CoverImage = LoadDefaultCoverImage();
 
-     
             Observable.Interval(TimeSpan.FromMilliseconds(100))
-                .ObserveOn(RxApp.MainThreadScheduler) 
+                .ObserveOn(RxApp.MainThreadScheduler)
                 .Subscribe(_ =>
                 {
+                   
                     if (_player.IsPlaying)
                     {
                         Progress = _player.GetCurrentTime();
                         Duration = _player.GetDuration();
                         CurrentTimeFormatted = TimeSpan.FromSeconds(Progress).ToString(@"mm\:ss");
                         DurationFormatted = TimeSpan.FromSeconds(Duration).ToString(@"mm\:ss");
+                     
                     }
                 });
+
+            InitializeMusicFolder();
+        }
+
+        private void InitializeMusicFolder()
+        {
+            try
+            {
+                if (!Directory.Exists(_musicFolder))
+                {
+                    Directory.CreateDirectory(_musicFolder);
+            
+                }
+
+                LoadMusicFiles();
+
+                _fileSystemWatcher = new FileSystemWatcher(_musicFolder)
+                {
+                    Filter = "*.mp3",
+                    EnableRaisingEvents = true
+                };
+                _fileSystemWatcher.Changed += (s, e) => LoadMusicFiles();
+                _fileSystemWatcher.Created += (s, e) => LoadMusicFiles();
+                _fileSystemWatcher.Deleted += (s, e) => LoadMusicFiles();
+                _fileSystemWatcher.Renamed += (s, e) => LoadMusicFiles();
+               
+            }
+            catch (Exception ex)
+            {
+            
+            }
+        }
+
+        private void LoadMusicFiles()
+        {
+            try
+            {
+                var files = Directory.GetFiles(_musicFolder, "*.mp3", SearchOption.TopDirectoryOnly);
+                MusicFiles.Clear();
+                foreach (var file in files)
+                {
+                    MusicFiles.Add(file);
+                }
+                Console.WriteLine($"Loaded {MusicFiles.Count} music files from {_musicFolder}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to load music files: {ex.Message}");
+            }
         }
 
         private Bitmap? LoadDefaultCoverImage()
@@ -134,12 +197,12 @@ namespace AudioPlayer.ViewModels
                 }
 
                 Console.WriteLine($"Default cover image not found at: {_fallbackCoverPath}");
-                return null; 
+                return null;
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Failed to load default cover image: {ex.Message}");
-                return null; 
+                return null;
             }
         }
 
@@ -156,45 +219,77 @@ namespace AudioPlayer.ViewModels
                 if (result != null && result.Length > 0)
                 {
                     Console.WriteLine($"Loading file: {result[0]}");
-                    _player.LoadFile(result[0]);
-                    CurrentFile = System.IO.Path.GetFileName(result[0]);
-                    Duration = _player.GetDuration();
-                    Progress = 0;
-                    CurrentTimeFormatted = "00:00";
-                    DurationFormatted = TimeSpan.FromSeconds(Duration).ToString(@"mm\:ss");
-                    Console.WriteLine($"File loaded. Duration: {Duration}, DurationFormatted: {DurationFormatted}");
-                    
-                    try
+                    await LoadAndPlayTrack(result[0]);
+                }
+            }
+        }
+
+        private async Task OpenFolder()
+        {
+            var dialog = new OpenFolderDialog
+            {
+                Title = "Select Music Folder"
+            };
+            var window = (App.Current.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)?.MainWindow;
+            if (window != null)
+            {
+                var result = await dialog.ShowAsync(window);
+                if (!string.IsNullOrEmpty(result))
+                {
+                    _musicFolder = result;
+                    _fileSystemWatcher.Path = _musicFolder;
+                    LoadMusicFiles();
+                    Console.WriteLine($"Selected music folder: {_musicFolder}");
+                }
+            }
+        }
+
+        private async Task LoadAndPlayTrack(string filePath)
+        {
+            _player.LoadFile(filePath);
+            CurrentFile = System.IO.Path.GetFileName(filePath);
+            Duration = _player.GetDuration();
+            Progress = 0;
+            CurrentTimeFormatted = "00:00";
+            DurationFormatted = TimeSpan.FromSeconds(Duration).ToString(@"mm\:ss");
+            Console.WriteLine($"File loaded. Duration: {Duration}, DurationFormatted: {DurationFormatted}");
+
+            try
+            {
+                Console.WriteLine($"Attempting to load cover for {CurrentFile}...");
+                using (var file = TagLib.File.Create(filePath))
+                {
+                    var pictures = file.Tag.Pictures;
+                    if (pictures != null && pictures.Length > 0)
                     {
-                        Console.WriteLine($"Attempting to load cover for {CurrentFile}...");
-                        using (var file = TagLib.File.Create(result[0]))
+                        var picture = pictures[0];
+                        using (Stream stream = new MemoryStream(picture.Data.Data))
                         {
-                            var pictures = file.Tag.Pictures;
-                            if (pictures != null && pictures.Length > 0)
-                            {
-                                var picture = pictures[0];
-                                using (Stream stream = new MemoryStream(picture.Data.Data))
-                                {
-                                    Console.WriteLine($"Stream type for embedded cover: {stream.GetType().Name}");
-                                    CoverImage = new Bitmap(stream);
-                                    Console.WriteLine("Embedded cover image loaded successfully.");
-                                }
-                            }
-                            else
-                            {
-                                Console.WriteLine("No embedded cover found, loading default cover...");
-                                CoverImage = LoadDefaultCoverImage();
-                            }
+                            Console.WriteLine($"Stream type for embedded cover: {stream.GetType().Name}");
+                            CoverImage = new Bitmap(stream);
+                            Console.WriteLine("Embedded cover image loaded successfully.");
                         }
                     }
-                    catch (Exception ex)
+                    else
                     {
-                        Console.WriteLine($"Failed to load cover image: {ex.Message}");
-                        Console.WriteLine("Attempting to load default cover image as fallback...");
+                        Console.WriteLine("No embedded cover found, loading default cover...");
                         CoverImage = LoadDefaultCoverImage();
                     }
                 }
             }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to load cover image: {ex.Message}");
+                Console.WriteLine("Attempting to load default cover image as fallback...");
+                CoverImage = LoadDefaultCoverImage();
+            }
+        }
+
+        private async Task PlayTrack(string trackPath)
+        {
+            Console.WriteLine($"Playing track: {trackPath}");
+            await LoadAndPlayTrack(trackPath);
+            _player.PlayPause();
         }
 
         private void MinimizeWindow()

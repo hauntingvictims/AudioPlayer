@@ -1,31 +1,58 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:AudioPlayer.ViewModels"
+        xmlns:local="using:AudioPlayer"
+        xmlns:input="using:Avalonia.Input"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d" d:DesignWidth="300" d:DesignHeight="450"
         Title="Audio Player"
+        MinHeight="500" MinWidth="650"
         Width="650" Height="600"
         x:Class="AudioPlayer.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         TransparencyLevelHint="AcrylicBlur"
         ExtendClientAreaToDecorationsHint="True"
-        ExtendClientAreaTitleBarHeightHint="20"
-        Background="Transparent">
+        ExtendClientAreaTitleBarHeightHint="25"
+        Background="Transparent" >
+    
+
+    <Window.Resources>
+        <local:FileNameConverter x:Key="FileNameConverter" />
+        <local:ZeroConverter x:Key="IsZeroConverter" Invert="False" />
+        <local:ZeroConverter x:Key="IsNotZeroConverter" Invert="True" />
+        <local:NullConverter x:Key="IsNullConverter" />
+        <local:NullConverter x:Key="IsNotNullConverter" Invert="True" />
+    </Window.Resources>
+
     
     <!-- Side panel for playlist or mby controls -->
+    
     <DockPanel>
-        <Border DockPanel.Dock="Left" Width="220" Background="#1f1e1e" >
+        <Border DockPanel.Dock="Left" Width="250" Background="rgba(46, 46, 46, 0.45)" >
             <Grid>
-            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center"> 
-            <TextBlock Text="No music here" FontSize="16" HorizontalAlignment="Center" Margin="0,0,0,0"></TextBlock>
-                <Button Content="Open Folder" Command="{Binding Path=OpenFileCommand}" HorizontalAlignment="Center" Margin="5"></Button>
+                <ListBox ItemsSource="{Binding MusicFiles}" Margin="10" Background="Transparent"
+                         IsVisible="{Binding MusicFiles.Count, Converter={StaticResource IsNotZeroConverter}}">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding Converter={StaticResource FileNameConverter}}" Foreground="LightGray" Margin="0,0,0,2"
+                                       DoubleTapped="OnTrackDoubleTapped" />
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+                
+                
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding MusicFiles.Count, Converter={StaticResource IsZeroConverter}}"> 
+                <TextBlock Text="No music here" FontSize="16" HorizontalAlignment="Center" Margin="0,0,0,2"></TextBlock>
+                <Button Content="Open Folder" Command="{Binding Path=OpenFolderCommand}" HorizontalAlignment="Center" Margin="5" Height="25"></Button>
             </StackPanel>
         </Grid>
+         
     </Border>    
+            
         
     <Grid RowDefinitions="40,Auto,Auto,Auto,Auto,*" Margin="10">
-        <TextBlock Text="Player" HorizontalAlignment="Center" ></TextBlock>
+        <TextBlock Text="Player" HorizontalAlignment="Center" FontSize="13" Margin="0,5,0,0"></TextBlock>
         
         <!-- Cover Image -->
         <Border Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="3" Width="220" Height="220" Margin="30" CornerRadius="5" ClipToBounds="True"
@@ -43,7 +70,6 @@
      
         <Border Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="3" Width="220" Height="220" Margin="10" CornerRadius="20" Background="#D3D3D3"
                 IsVisible="{Binding CoverImage, Converter={x:Static ObjectConverters.IsNull}}">
-            <TextBlock Text="♪" FontSize="40" Foreground="#333333" HorizontalAlignment="Center" VerticalAlignment="Center" />
         </Border>
 
      
@@ -52,16 +78,18 @@
         <ProgressBar Value="{Binding Progress}" Maximum="{Binding Duration}" Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="3" Margin="10,5" />
         
        <Grid Grid.Row="3" ColumnDefinitions="Auto,*,Auto">
-            <TextBlock Text="{Binding CurrentTimeFormatted}" Grid.Column="0" HorizontalAlignment="Left" Margin="10,10,0,0" />
-            <TextBlock Text="{Binding DurationFormatted}" Grid.Column="2" HorizontalAlignment="Right" Margin="0,10,10,0" />
+            <TextBlock Text="{Binding CurrentTimeFormatted}" Grid.Column="0" HorizontalAlignment="Left" Margin="10,10,0,0" FontSize="12" />
+            <TextBlock Text="{Binding DurationFormatted}" Grid.Column="2" HorizontalAlignment="Right" Margin="0,10,10,0" FontSize="12" />
         </Grid>
         
         
-        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="3" Margin="10">
-            <Button Content="Prev" Margin="5" />
-            <Button Content="Play/Pause" Command="{Binding PlayPauseCommand}" Margin="5" />
-            <Button Content="Next" Margin="5" />
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="3" Margin="0,5,0,50">
+            <Button Content="Prev" Margin="10" />
+            <Button Content="Play/Pause" Command="{Binding PlayPauseCommand}" Margin="10" />
+            <Button Content="Next" Margin="10" />
         </StackPanel>
        </Grid>
+        
   </DockPanel>     
+        
 </Window>
