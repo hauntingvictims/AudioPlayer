@@ -28,5 +28,8 @@
         <None Update="Assets\default_cover.png">
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </None>
+        <None Update="Assets\FontAwesome\fontawesome-webfont.ttf">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
     </ItemGroup>
 </Project>

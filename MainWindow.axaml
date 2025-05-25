@@ -2,7 +2,6 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:AudioPlayer.ViewModels"
         xmlns:local="using:AudioPlayer"
-        xmlns:input="using:Avalonia.Input"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d" d:DesignWidth="300" d:DesignHeight="450"
@@ -23,6 +22,8 @@
         <local:ZeroConverter x:Key="IsNotZeroConverter" Invert="True" />
         <local:NullConverter x:Key="IsNullConverter" />
         <local:NullConverter x:Key="IsNotNullConverter" Invert="True" />
+        <FontFamily x:Key="FontAwesome">/Assets/FontAwesome/fontawesome-webfont.ttf</FontFamily>
+        <local:NumberConverter x:Key="NumberConverter" />
     </Window.Resources>
 
     
@@ -35,8 +36,12 @@
                          IsVisible="{Binding MusicFiles.Count, Converter={StaticResource IsNotZeroConverter}}">
                     <ListBox.ItemTemplate>
                         <DataTemplate>
-                            <TextBlock Text="{Binding Converter={StaticResource FileNameConverter}}" Foreground="LightGray" Margin="0,0,0,2"
-                                       DoubleTapped="OnTrackDoubleTapped" />
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="{Binding ., Converter={StaticResource NumberConverter}, ConverterParameter={Binding RelativeSource={RelativeSource AncestorType=ListBox}, Path=ItemsSource}}"
+                                           Foreground="LightGray" Margin="0,0,5,2" />
+                                <TextBlock Text="{Binding Converter={StaticResource FileNameConverter}}" Foreground="LightGray" Margin="0,0,0,2"
+                                           DoubleTapped="OnTrackDoubleTapped" />
+                            </StackPanel>
                         </DataTemplate>
                     </ListBox.ItemTemplate>
                 </ListBox>
@@ -75,7 +80,7 @@
      
         <TextBlock Text="{Binding CurrentFile}" Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="3" HorizontalAlignment="Center" Margin="10" />
 
-        <ProgressBar Value="{Binding Progress}" Maximum="{Binding Duration}" Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="3" Margin="10,5" />
+        <ProgressBar Value="{Binding Progress}" Maximum="{Binding Duration}" Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="3" Foreground="White" Margin="10,5" />
         
        <Grid Grid.Row="3" ColumnDefinitions="Auto,*,Auto">
             <TextBlock Text="{Binding CurrentTimeFormatted}" Grid.Column="0" HorizontalAlignment="Left" Margin="10,10,0,0" FontSize="12" />
@@ -85,7 +90,9 @@
         
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="3" Margin="0,5,0,50">
             <Button Content="Prev" Margin="10" />
-            <Button Content="Play/Pause" Command="{Binding PlayPauseCommand}" Margin="10" />
+            <Button Command="{Binding PlayPauseCommand}" Margin="5">
+                <TextBlock Text="&#xf04b;" FontFamily="{StaticResource FontAwesome}" FontSize="24" Foreground="White" />
+            </Button>
             <Button Content="Next" Margin="10" />
         </StackPanel>
        </Grid>
